@@ -1,49 +1,81 @@
-"""
-This file defines actions, i.e. functions the URLs are mapped into
-The @action(path) decorator exposed the function at URL:
-
-    http://127.0.0.1:8000/{app_name}/{path}
-
-If app_name == '_default' then simply
-
-    http://127.0.0.1:8000/{path}
-
-If path == 'index' it can be omitted:
-
-    http://127.0.0.1:8000/
-
-The path follows the bottlepy syntax.
-
-@action.uses('generic.html')  indicates that the action uses the generic.html template
-@action.uses(session)         indicates that the action uses the session
-@action.uses(db)              indicates that the action uses the db
-@action.uses(T)               indicates that the action uses the i18n & pluralization
-@action.uses(auth.user)       indicates that the action requires a logged in user
-@action.uses(auth)            indicates that the action requires the auth object
-
-session, db, T, auth, and tempates are examples of Fixtures.
-Warning: Fixtures MUST be declared with @action.uses({fixtures}) else your app will result in undefined behavior
-"""
-
 from py4web import action, request, abort, redirect, URL
 from yatl.helpers import A
 from .common import db, session, T, cache, auth, logger, authenticated, unauthenticated, flash
 from .models import get_user_email
-
+import base64
 
 @action('index')
 @action.uses('index.html', db, auth.user)
 def index():
     return dict(
-        get_contacts_url = URL('get_contacts'),
-        # Complete. 
+        get_contacts_url=URL('get_contacts'),
+        add_contact_url=URL('add_contact'),
+        update_contact_url=URL('update_contact'),
+        delete_contact_url=URL('delete_contact'),
+        upload_image_url=URL('upload_image'),
     )
 
 @action('get_contacts')
 @action.uses(db, auth.user)
 def get_contacts():
-    contacts = [] # Complete. 
+    user_email = get_user_email()
+    contacts = db(db.contact_card.user_email == user_email).select().as_list()
     return dict(contacts=contacts)
 
-# You can add more methods. 
 
+@action('add_contact', method="POST")
+@action.uses(db, auth.user)
+def add_contact():
+    user_email = get_user_email()
+    new_contact_id = db.contact_card.insert(
+        user_email=user_email,
+        name="",
+        affiliation="",
+        description="",
+        photo="https://bulma.io/assets/images/placeholders/96x96.png"
+    )
+    new_contact = db.contact_card[new_contact_id]
+    return dict(contact=new_contact.as_dict())  # Ensure it returns data for the current user
+
+
+@action('update_contact', method="POST")
+@action.uses(db, auth.user)
+def update_contact():
+    user_email = get_user_email()
+    contact_id = request.json.get("id")
+    field = request.json.get("field")
+    value = request.json.get("value")
+
+    contact = db.contact_card[contact_id]
+    if contact and contact.user_email == user_email:
+        if field in ["name", "affiliation", "description"]:
+            contact.update_record(**{field: value})
+            db.commit()  # Ensure the update is saved
+            return dict(success=True)
+    return dict(success=False)
+
+@action('delete_contact', method="POST")
+@action.uses(db, auth.user)
+def delete_contact():
+    user_email = get_user_email()
+    contact_id = request.json.get("id")
+
+    contact = db.contact_card[contact_id]
+    if contact and contact.user_email == user_email:
+        db(db.contact_card.id == contact_id).delete()
+        return dict(success=True)
+    return dict(success=False)
+
+@action('upload_image', method="POST")
+@action.uses(db, auth.user)
+def upload_image():
+    user_email = get_user_email()
+    contact_id = request.forms.get("id")
+    image_data = request.forms.get("image")
+
+    contact = db.contact_card[contact_id]
+    if contact and contact.user_email == user_email:
+        contact.update_record(photo=image_data)
+        db.commit()
+        return dict(success=True)
+    return dict(success=False)
