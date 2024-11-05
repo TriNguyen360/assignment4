@@ -17,7 +17,7 @@ app.data = function() {
 
 // Methods for handling CRUD operations and image uploads
 app.methods = {
-    // Load contacts from the server
+    // Load contacts from the server for the current user
     load_data: async function () {
         try {
             let response = await axios.get(get_contacts_url);
@@ -32,7 +32,7 @@ app.methods = {
         try {
             let response = await axios.post(add_contact_url);
             if (response.data.contact) {
-                this.contacts.push(response.data.contact); // Push the new contact directly
+                this.contacts.push(response.data.contact); // Add the new contact to the list
             }
         } catch (error) {
             console.error("Error adding contact:", error);
@@ -43,21 +43,21 @@ app.methods = {
     deleteContact: async function (contact_id) {
         try {
             await axios.post(delete_contact_url, { id: contact_id });
-            this.contacts = this.contacts.filter(contact => contact.id !== contact_id);
+            this.contacts = this.contacts.filter(contact => contact.id !== contact_id); // Remove the deleted contact
         } catch (error) {
             console.error("Error deleting contact:", error);
         }
     },
 
-    // Edit a field in a contact
+    // Edit a field in a contact and update it on the server
     editField: async function (contact, field, value) {
         try {
             contact[`${field}_editable`] = false; // Set field to read-only on blur
             let response = await axios.post(update_contact_url, { id: contact.id, field: field, value: value });
             if (response.data.success) {
                 console.log(`Successfully saved ${field} for contact ID ${contact.id}`);
-                // Optionally, reload contacts to confirm changes (can be omitted if data loads correctly)
-                await this.load_data();
+                // Ensure the contact updates locally without reloading all data
+                contact[field] = value;
             } else {
                 console.error(`Failed to update ${field} for contact ID ${contact.id}`);
             }
@@ -65,7 +65,7 @@ app.methods = {
             console.error("Error updating contact:", error);
         }
     },
-    
+
     // Click handler for figure tag to upload an image
     click_figure: function (contact) {
         let fileInput = document.getElementById(`file-input-${contact.id}`);
@@ -80,8 +80,10 @@ app.methods = {
             reader.onload = async (e) => {
                 let image_data = e.target.result;
                 try {
-                    await axios.post(upload_image_url, { id: contact.id, image: image_data });
-                    contact.photo = image_data; // Update the image URL in local state
+                    let response = await axios.post(upload_image_url, { id: contact.id, image: image_data });
+                    if (response.data.success) {
+                        contact.photo = image_data; // Update the image URL in local state
+                    }
                 } catch (error) {
                     console.error("Error uploading image:", error);
                 }
