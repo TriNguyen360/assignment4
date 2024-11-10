@@ -21,7 +21,13 @@ app.methods = {
     load_data: async function () {
         try {
             let response = await axios.get(get_contacts_url);
-            this.contacts = response.data.contacts; // Load contacts directly from server response
+            // Initialize editable properties for each contact
+            this.contacts = response.data.contacts.map(contact => {
+                contact.name_editable = false;
+                contact.affiliation_editable = false;
+                contact.description_editable = false;
+                return contact;
+            });
         } catch (error) {
             console.error("Error loading contacts:", error);
         }
@@ -32,7 +38,12 @@ app.methods = {
         try {
             let response = await axios.post(add_contact_url);
             if (response.data.contact) {
-                this.contacts.push(response.data.contact); // Add the new contact to the list
+                // Initialize editable properties
+                let contact = response.data.contact;
+                contact.name_editable = false;
+                contact.affiliation_editable = false;
+                contact.description_editable = false;
+                this.contacts.push(contact); // Add the new contact to the list
             }
         } catch (error) {
             console.error("Error adding contact:", error);
@@ -51,13 +62,12 @@ app.methods = {
 
     // Edit a field in a contact and update it on the server
     editField: async function (contact, field, value) {
+        contact[`${field}_editable`] = false; // Set field to read-only
         try {
-            contact[`${field}_editable`] = false; // Set field to read-only on blur
             let response = await axios.post(update_contact_url, { id: contact.id, field: field, value: value });
             if (response.data.success) {
+                contact[field] = value; // Update the contact's field with the latest value
                 console.log(`Successfully saved ${field} for contact ID ${contact.id}`);
-                // Ensure the contact updates locally without reloading all data
-                contact[field] = value;
             } else {
                 console.error(`Failed to update ${field} for contact ID ${contact.id}`);
             }
@@ -65,6 +75,7 @@ app.methods = {
             console.error("Error updating contact:", error);
         }
     },
+
 
     // Click handler for figure tag to upload an image
     click_figure: function (contact) {

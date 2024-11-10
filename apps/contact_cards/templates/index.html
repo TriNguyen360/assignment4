@@ -36,7 +36,7 @@
                      placeholder="Name"
                      :readonly="!contact.name_editable"
                      @click="makeEditable(contact, 'name')"
-                     @blur="editField(contact, 'name', contact.name)"
+                     @change="editField(contact, 'name', $event.target.value)"
               />
             </p>
             <!-- Editable Affiliation Field -->
@@ -47,7 +47,7 @@
                      placeholder="Affiliation"
                      :readonly="!contact.affiliation_editable"
                      @click="makeEditable(contact, 'affiliation')"
-                     @blur="editField(contact, 'affiliation', contact.affiliation)"
+                     @blur="editField(contact, 'affiliation', $event.target.value)"
               />
             </p>
           </div>
@@ -64,7 +64,7 @@
                   placeholder="Description"
                   :readonly="!contact.description_editable"
                   @click="makeEditable(contact, 'description')"
-                  @blur="editField(contact, 'description', contact.description)"
+                  @blur="editField(contact, 'description', $event.target.value)"
         ></textarea> 
       </div>
     </div>
