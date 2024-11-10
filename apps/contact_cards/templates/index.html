@@ -2,34 +2,35 @@
 
 <style>
 [v-cloak] {
-     display: none;
+     display: none; /* Hides content until Vue.js is fully loaded */
 }
 </style>
 
+<!-- Hidden file input field for image upload -->
 <input type="file" id="file-input" style="display: none"
 accept=".jpg, .png, .jpeg, .gif, .bmp, .tif, .tiff|image/*">
 
 <div class="section" id="app" v-cloak>
   <div class="container">
     <h1 class="title">Contacts</h1>
-    <!-- Add Contact Button -->
+    <!-- Button to add a new contact -->
     <div>
       <button class="button is-success" id="add_button" @click="addContact">Add Contact</button>
     </div>
 
-    <!-- List of Contacts -->
+    <!-- Loop to display contacts dynamically -->
     <div v-for="contact in contacts" :key="contact.id" class="card contact mt-4">
       <div class="card-content">
         <div class="media">
           <div class="media-left">
-            <figure class="photo image is-96x96">
-              <!-- Of course, below, the src field has to change in the vue implementation... -->
-              <img class="photo" src="https://bulma.io/assets/images/placeholders/96x96.png"/>
+            <!-- Clicking the figure element triggers image upload for the contact -->
+            <figure class="photo image is-96x96" @click="choose_image(contact)">
+              <img class="photo" :src="contact.photo || 'https://bulma.io/assets/images/placeholders/96x96.png'" />
             </figure>
           </div>
 
           <div class="media-content">
-            <!-- Editable Name Field -->
+            <!-- Editable Name Field; becomes editable on click -->
             <p class="title person-name">
               <input type="text" class="input is-4 title" 
                      name="name"
@@ -40,7 +41,7 @@ accept=".jpg, .png, .jpeg, .gif, .bmp, .tif, .tiff|image/*">
                      @change="editField(contact, 'name', $event.target.value)"
               />
             </p>
-            <!-- Editable Affiliation Field -->
+            <!-- Editable Affiliation Field; becomes editable on click -->
             <p class="subtitle person-affiliation">
               <input type="text" class="input is-6" 
                      name="affiliation"
@@ -52,13 +53,13 @@ accept=".jpg, .png, .jpeg, .gif, .bmp, .tif, .tiff|image/*">
               />
             </p>
           </div>
-          <!-- Delete Button -->
+          <!-- Button to delete the contact -->
           <div class="media-right">
             <i @click="deleteContact(contact.id)" class="delete-button has-text-danger fa fa-trash trash"></i>
           </div>
         </div>
 
-        <!-- Editable Description Field -->
+        <!-- Editable Description Field; becomes editable on click -->
         <textarea class="textarea"
                   name="description"
                   v-model="contact.description"
@@ -73,7 +74,7 @@ accept=".jpg, .png, .jpeg, .gif, .bmp, .tif, .tiff|image/*">
 </div>
 
 [[block page_scripts]]
-<!-- Load URLs for Vue.js app -->
+<!-- Load URLs for API endpoints used in Vue.js app -->
 <script>
   let get_contacts_url = "[[=URL('get_contacts')]]";
   let add_contact_url = "[[=URL('add_contact')]]";
@@ -82,5 +83,6 @@ accept=".jpg, .png, .jpeg, .gif, .bmp, .tif, .tiff|image/*">
   let upload_image_url = "[[=URL('upload_image')]]";
 </script>
 
+<!-- Vue.js application script -->
 <script src="js/index.js"></script>
 [[end]]

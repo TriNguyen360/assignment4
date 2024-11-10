@@ -6,6 +6,7 @@ from .models import get_user_email
 @action('index')
 @action.uses('index.html', db, auth.user)
 def index():
+    # Main index action to provide URLs for frontend interactions
     return dict(
         get_contacts_url=URL('get_contacts'),
         add_contact_url=URL('add_contact'),
@@ -17,6 +18,7 @@ def index():
 @action('get_contacts')
 @action.uses(db, auth.user)
 def get_contacts():
+    # Retrieves all contacts associated with the current user
     user_email = get_user_email()
     contacts = db(db.contact_card.user_email == user_email).select().as_list()
     return dict(contacts=contacts)
@@ -24,6 +26,7 @@ def get_contacts():
 @action('add_contact', method="POST")
 @action.uses(db, auth.user)
 def add_contact():
+    # Adds a new contact associated with the current user
     user_email = get_user_email()
     new_contact_id = db.contact_card.insert(
         user_email=user_email,
@@ -32,13 +35,14 @@ def add_contact():
         description="",
         photo="https://bulma.io/assets/images/placeholders/96x96.png"
     )
-    db.commit()  # Added db.commit()
+    db.commit()  # Commit changes to the database
     new_contact = db.contact_card[new_contact_id]
     return dict(contact=new_contact.as_dict())
 
 @action('update_contact', method="POST")
 @action.uses(db, auth.user)
 def update_contact():
+    # Updates a specific field for a contact if the current user is authorized
     user_email = get_user_email()
     contact_id = int(request.json.get("id"))
     field = request.json.get("field")
@@ -55,19 +59,21 @@ def update_contact():
 @action('delete_contact', method="POST")
 @action.uses(db, auth.user)
 def delete_contact():
+    # Deletes a contact if the current user is authorized
     user_email = get_user_email()
     contact_id = int(request.json.get("id"))
 
     contact = db.contact_card[contact_id]
     if contact and contact.user_email == user_email:
         db(db.contact_card.id == contact_id).delete()
-        db.commit()  # Added db.commit()
+        db.commit()  # Commit changes to the database
         return dict(success=True)
     return dict(success=False)
 
 @action('upload_image', method="POST")
 @action.uses(db, auth.user)
 def upload_image():
+    # Handles image upload for a contact, ensuring only the owner can update
     user_email = get_user_email()
     contact_id = int(request.json.get("id"))
     image_data = request.json.get("image")
