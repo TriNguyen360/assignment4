@@ -33,15 +33,29 @@ All contacts should be editable in place.  Specifically, the input fields should
 When a user clicks on a field, the field becomes editable  (does not have the `readonly` attribute).  The user can then input characters, and when the field loses focus, the changes should be saved to the database.  This should hold for the name, affiliation, and description fields.
 
 For the contact image, when someone clicks on the `<figure>` tag, a file dialog should open, allowing the user to select a new image.  The image should be uploaded to the server, and the new image should be displayed in the contact card.
-The trick to obtaining this behavior is as follows. The `<figure>` tag should contain an `<input type="file" style="display:none">` tag.  When the `<figure>` tag is clicked, it calls a `click_figure` function, which in turn clicks the `<input>` tag, causing the file selection dialog to open:
+The trick to obtaining this behavior is as follows. 
+First, ensure that you have a single input field that acts as file selector at the top of your HTML file:
 
-    click_figure: function () {
-        let input = document.getElementById("file-input");
-        input.click();
-    }
+```html
+<input type="file" id="file-input" style="display: none"
+accept=".jpg, .png, .jpeg, .gif, .bmp, .tif, .tiff|image/*">
+```
 
-To upload an image, I recommend you generate a data URL for the image, and send it to the server via a POST request.  The server should save the image in the database.  Then, you can display the image by setting the `src` attribute of the `<img>` tag to the data URL of the image.  See the [`upload-image-url` branch of the `upload_with_preview` app](https://github.com/learn-py4web/upload_with_preview/tree/upload-image-url) for an example implementation. 
+Second, when the figure is clicked, you should trigger a click on the input field:
 
+```javascript
+choose_image: function (contact) {
+    let input = document.getElementById("file-input");
+    input.onchange = function () {
+        let file = input.files[0];
+        if (file) {
+            // Read the file as data url, and upload the resulting
+            // string to the contact. 
+        }
+    };
+    input.click();
+}
+```
 
 ## Implementation
 
@@ -58,7 +72,7 @@ where the options are to optimize logging.
 
 You should only modify the following files:
 - `static/js/index.js`
-- `templates/index.html` (be careful to preserve the tags and classes, or testing with Selenium will fail).
+- `templates/index.html`
 - `controllers.py`
 - `models.py`
 
